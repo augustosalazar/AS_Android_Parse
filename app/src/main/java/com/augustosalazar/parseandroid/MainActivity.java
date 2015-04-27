@@ -11,21 +11,32 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Adapter;
+import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
 
 import com.parse.Parse;
+import com.parse.ParseFile;
 import com.parse.ParseObject;
+import com.parse.ParseQuery;
+import com.parse.ParseException;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 public class MainActivity extends ActionBarActivity {
 
     private ProgressDialog pDialog;
     private ListView listView;
+    List<ParseObject> ob;
+    private ArrayList values;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,7 +49,7 @@ public class MainActivity extends ActionBarActivity {
 
         Parse.initialize(this, "bCRkKfDQBV1OuVaSUcyqHJlRzBApgUyRoXGuFx4B", "7teZIrgpXiXJO2E25eAdEE9UISkGYhicnlf8BDWr");
 
-        getData();
+        new GetData().execute();
     }
 
 
@@ -89,12 +100,12 @@ public class MainActivity extends ActionBarActivity {
 
     public void AgregarEntrada(View view) {
         if (isNetworkAvailable()){
-            new GetData().execute();
+            new SendData().execute();
         }
     }
 
 
-    private class GetData extends AsyncTask<Void, Void, Void> {
+    private class SendData extends AsyncTask<Void, Void, Void> {
 
         @Override
         protected void onPreExecute() {
@@ -159,8 +170,66 @@ public class MainActivity extends ActionBarActivity {
             // Dismiss the progress dialog
             if (pDialog.isShowing())
                 pDialog.dismiss();
+
+            new GetData().execute();
         }
 
+    }
+
+
+
+
+    // RemoteDataTask AsyncTask
+    private class GetData extends AsyncTask<Void, Void, Void> {
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            // Create a progressdialog
+            pDialog = new ProgressDialog(MainActivity.this);
+            // Set progressdialog title
+            pDialog.setTitle("Cargando datos de Parse");
+            // Set progressdialog message
+            pDialog.setMessage("Loading...");
+            pDialog.setIndeterminate(false);
+            // Show progressdialog
+            pDialog.show();
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            // Create the array
+            values = new ArrayList<String>();
+            try {
+
+                ParseQuery<ParseObject> query = new ParseQuery<ParseObject>(
+                        "DataEntry");
+
+                ob = query.find();
+                for (ParseObject dato : ob) {
+
+                    values.add(dato.get("first")+ " " + dato.get("last"));
+
+                }
+            } catch (ParseException e) {
+                Log.e("Error", e.getMessage());
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void result) {
+            // Locate the listview in listview_main.xml
+            // Pass the results into ListViewAdapter.java
+
+            ArrayAdapter<String> adapter = new ArrayAdapter<String>(MainActivity.this,
+                    android.R.layout.simple_list_item_1, android.R.id.text1, values);
+
+            listView.setAdapter(adapter);
+
+            // Close the progressdialog
+            pDialog.dismiss();
+        }
     }
 
 }
