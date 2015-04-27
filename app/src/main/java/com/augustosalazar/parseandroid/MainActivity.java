@@ -1,15 +1,29 @@
 package com.augustosalazar.parseandroid;
 
+import android.app.ProgressDialog;
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.os.AsyncTask;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.Toast;
 
 import com.parse.Parse;
 import com.parse.ParseObject;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 
 public class MainActivity extends ActionBarActivity {
+
+    private ProgressDialog pDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -21,10 +35,9 @@ public class MainActivity extends ActionBarActivity {
 
         Parse.initialize(this, "bCRkKfDQBV1OuVaSUcyqHJlRzBApgUyRoXGuFx4B", "7teZIrgpXiXJO2E25eAdEE9UISkGYhicnlf8BDWr");
 
-        ParseObject testObject = new ParseObject("TestObject");
+/*        ParseObject testObject = new ParseObject("TestObject");
         testObject.put("foo", "bar");
-        testObject.saveInBackground();
-
+        testObject.saveInBackground();*/
     }
 
 
@@ -49,4 +62,100 @@ public class MainActivity extends ActionBarActivity {
 
         return super.onOptionsItemSelected(item);
     }
+
+    private boolean isNetworkAvailable() {
+        ConnectivityManager manager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = manager.getActiveNetworkInfo();
+        boolean isNetworkAvaible = false;
+        if (networkInfo != null && networkInfo.isConnected()) {
+            isNetworkAvaible = true;
+            Toast.makeText(this, "Network is available ", Toast.LENGTH_LONG)
+                    .show();
+        } else {
+            Toast.makeText(this, "Network not available ", Toast.LENGTH_LONG)
+                    .show();
+        }
+        return isNetworkAvaible;
+    }
+
+    public void AgregarEntrada(View view) {
+
+        if (isNetworkAvailable()){
+            new GetData().execute();
+        }
+
+
+    }
+
+
+    private class GetData extends AsyncTask<Void, Void, Void> {
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            // Showing progress dialog
+            pDialog = new ProgressDialog(MainActivity.this);
+            pDialog.setMessage("Please wait...");
+            pDialog.setCancelable(false);
+            pDialog.show();
+
+        }
+
+        @Override
+        protected Void doInBackground(Void... arg0) {
+            // Creating service handler class instance
+            ServiceHandler sh = new ServiceHandler();
+            JSONArray usuarios = null;
+            String url = "http://api.randomuser.me/?results=1&format=jsaon";
+            // Making a request to url and getting response
+            String jsonStr = sh.makeServiceCall(url, ServiceHandler.GET);
+
+            Log.d("Response: ", "> " + jsonStr);
+
+            if (jsonStr != null) {
+                try {
+                    JSONObject jsonObj = new JSONObject(jsonStr);
+
+                    usuarios = jsonObj.getJSONArray("results");
+                    Log.d("Response length: ", "> " + usuarios.length());
+
+                    for (int i = 0; i < usuarios.length(); i++) {
+                        JSONObject c = usuarios.getJSONObject(i).getJSONObject("user");
+
+                        ParseObject testObject = new ParseObject("DataEntry");
+
+                        JSONObject name = c.getJSONObject("name");
+
+                        JSONObject imageObject = c.getJSONObject("picture");
+
+                        testObject.put("first",name.getString("first"));
+                        testObject.put("last",name.getString("last"));
+                        testObject.put("gender",c.getString("gender"));
+                        testObject.put("picture",c.getString("picture"));
+
+                        testObject.saveInBackground();
+
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+
+            } else {
+                Log.e("ServiceHandler", "Couldn't get any data from the url");
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void result) {
+            super.onPostExecute(result);
+            // Dismiss the progress dialog
+            if (pDialog.isShowing())
+                pDialog.dismiss();
+        }
+
+    }
+
 }
