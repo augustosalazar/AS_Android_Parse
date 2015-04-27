@@ -11,6 +11,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ListView;
 import android.widget.Toast;
 
 import com.parse.Parse;
@@ -24,6 +25,7 @@ import org.json.JSONObject;
 public class MainActivity extends ActionBarActivity {
 
     private ProgressDialog pDialog;
+    private ListView listView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,12 +34,11 @@ public class MainActivity extends ActionBarActivity {
 
         // Enable Local Datastore.
         Parse.enableLocalDatastore(this);
+        listView = (ListView) findViewById(R.id.listView);
 
         Parse.initialize(this, "bCRkKfDQBV1OuVaSUcyqHJlRzBApgUyRoXGuFx4B", "7teZIrgpXiXJO2E25eAdEE9UISkGYhicnlf8BDWr");
 
-/*        ParseObject testObject = new ParseObject("TestObject");
-        testObject.put("foo", "bar");
-        testObject.saveInBackground();*/
+        getData();
     }
 
 
@@ -63,6 +64,8 @@ public class MainActivity extends ActionBarActivity {
         return super.onOptionsItemSelected(item);
     }
 
+
+
     private boolean isNetworkAvailable() {
         ConnectivityManager manager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = manager.getActiveNetworkInfo();
@@ -78,13 +81,16 @@ public class MainActivity extends ActionBarActivity {
         return isNetworkAvaible;
     }
 
-    public void AgregarEntrada(View view) {
+    private void getData(){
+        if (isNetworkAvailable()){
 
+        }
+    }
+
+    public void AgregarEntrada(View view) {
         if (isNetworkAvailable()){
             new GetData().execute();
         }
-
-
     }
 
 
@@ -98,7 +104,6 @@ public class MainActivity extends ActionBarActivity {
             pDialog.setMessage("Please wait...");
             pDialog.setCancelable(false);
             pDialog.show();
-
         }
 
         @Override
@@ -107,7 +112,7 @@ public class MainActivity extends ActionBarActivity {
             ServiceHandler sh = new ServiceHandler();
             JSONArray usuarios = null;
             String url = "http://api.randomuser.me/?results=1&format=jsaon";
-            // Making a request to url and getting response
+
             String jsonStr = sh.makeServiceCall(url, ServiceHandler.GET);
 
             Log.d("Response: ", "> " + jsonStr);
@@ -131,7 +136,7 @@ public class MainActivity extends ActionBarActivity {
                         testObject.put("first",name.getString("first"));
                         testObject.put("last",name.getString("last"));
                         testObject.put("gender",c.getString("gender"));
-                        testObject.put("picture",c.getString("picture"));
+                        testObject.put("picture", c.getString("picture"));
 
                         testObject.saveInBackground();
 
